@@ -10,7 +10,7 @@ extern void conditional_clock_signal(bool a, bool b, bool c, bool &clk_en_a, boo
 int main(int argc, char* argv[])
 {
     bool LFSR1[LFSR1_WIDTH]={false}, LFSR2[LFSR2_WIDTH]={false}, LFSR3[LFSR3_WIDTH]={false};
-    
+    bool key[64] = {false}, frame_no[22] = {false};    
     
     // Initialize LFSRs to zero
     for(int i=0; i<LFSR1_WIDTH; ++i)
@@ -19,19 +19,6 @@ int main(int argc, char* argv[])
         LFSR2[i] = 0;
     for(int i=0; i<LFSR3_WIDTH; ++i)
         LFSR3[i] = 0;
-    
-    
-    
-    
-    /*
-    bool arr[5] = {false, true, true, false, true};
-    for(int i=0; i<5; ++i)
-        cout << arr[i] << endl;
-    cout << endl;
-    shift_right(arr, 5);
-    for(int i=0; i<5; ++i)
-        cout << arr[i] << endl;
-    */
    
 #ifdef DEBUG
     // Test code for conditional clocking signal
