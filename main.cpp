@@ -1,7 +1,5 @@
 #include "globals.hpp"
 
-
-
 extern void shift_right(bool* LFSRx, unsigned short int size, unsigned short int lfsr_no);
 extern void conditional_clock_signal(bool a, bool b, bool c, bool &clk_en_a, bool &clk_en_b, bool &clk_en_c);
 extern void a5_init(bool* key, bool* frame_no, bool* LFSR1, bool* LFSR2, bool* LFSR3);
@@ -11,6 +9,7 @@ extern void generate_keystream(bool* LFSR1, bool* LFSR2, bool* LFSR3, bool* keys
 int main(int argc, char* argv[])
 {
 #ifndef DEBUG
+    clock_t start, end;
     char file_char;
     unsigned long int plain_text_bits_length=0;
     bool* plain_text_bits;
@@ -94,14 +93,14 @@ int main(int argc, char* argv[])
             continue;
         }
     }
-    
+    /*
     cout << endl;
     for(int i=0; i<plain_text_bits_length; ++i)
     {
         cout << plain_text_bits[i];
     }
     cout << endl;
-    
+    */
     file.close();
 #endif    
       
@@ -137,6 +136,9 @@ int main(int argc, char* argv[])
     a5_init(key, frame_no, LFSR1, LFSR2, LFSR3);
     
     // Encryption
+    cout << endl;
+    cout << "Starting Encryption..." << endl;
+    start = clock();
     for (int i=0; i<plain_text_bits_length; ++i)
     {
         conditional_clock_signal(LFSR1[CLK_BIT_1], LFSR2[CLK_BIT_2], LFSR3[CLK_BIT_3], clk_en_a, clk_en_b, clk_en_c);
@@ -149,6 +151,10 @@ int main(int argc, char* argv[])
         k_i = XOR( XOR(LFSR1[LFSR1_WIDTH-1],LFSR2[LFSR2_WIDTH-1]) , LFSR3[LFSR3_WIDTH-1]);
         cipher_text_bits[i] = XOR(k_i, plain_text_bits[i]);
     }
+    end = clock();
+    cout << "Encryption Done!" << endl;
+    cout << "Total time for encryption : " << (double)(end-start)/CLOCKS_PER_SEC << " seconds" <<endl;
+    cout << "Speed in Gbps : " << (double)(((double)((double)(end-start)/(CLOCKS_PER_SEC))/plain_text_bits_length))*1000000000 << endl;
     /*
     cout << endl;
     for(int i=0; i<plain_text_bits_length; ++i)
@@ -168,6 +174,8 @@ int main(int argc, char* argv[])
     a5_init(key, frame_no, LFSR1, LFSR2, LFSR3);
     
     // Decryption
+    cout << endl;
+    cout << "Starting Decryption..." << endl;
     for (int i=0; i<plain_text_bits_length; ++i)
     {
         conditional_clock_signal(LFSR1[CLK_BIT_1], LFSR2[CLK_BIT_2], LFSR3[CLK_BIT_3], clk_en_a, clk_en_b, clk_en_c);
@@ -180,12 +188,13 @@ int main(int argc, char* argv[])
         k_i = XOR( XOR(LFSR1[LFSR1_WIDTH-1],LFSR2[LFSR2_WIDTH-1]) , LFSR3[LFSR3_WIDTH-1]);
         cipher_text_bits[i] = XOR(k_i, cipher_text_bits[i]);
     }
-    cout << endl << endl;
-    
+    cout << "Decryption Done!" << endl;
+    /*
+    cout << endl;
     for(int i=0; i<plain_text_bits_length; ++i)
         cout << cipher_text_bits[i];
     cout << endl;
-    
+    */
     
     delete plain_text_bits;
     delete cipher_text_bits;
