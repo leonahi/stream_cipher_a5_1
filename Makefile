@@ -15,7 +15,8 @@ RM     = rm
 EXEC   = a5
 OBJECTS = \
     main.o \
-	a5_utils.o
+	a5_utils.o \
+	a5_init.o
 
 .PHONEY: clean
 .PHONEY: all
@@ -29,6 +30,9 @@ main.o : main.cpp
 	$(CPP) -g -c $^
 
 a5_utils.o : a5_utils.cpp
+	$(CPP) -g -c $^
+
+a5_init.o : a5_init.cpp
 	$(CPP) -g -c $^
 
 compile:
