@@ -11,6 +11,11 @@ extern void generate_keystream(bool* LFSR1, bool* LFSR2, bool* LFSR3, bool* keys
 int main(int argc, char* argv[])
 {
 #ifndef DEBUG
+    char file_char;
+    unsigned long int plain_text_bits_length=0;
+    bool* plain_text_bits;
+    bool* cipher_text_bits;
+    
     bool LFSR1[LFSR1_WIDTH]={false}, LFSR2[LFSR2_WIDTH]={false}, LFSR3[LFSR3_WIDTH]={false};
     bool clk_en_a;
     bool clk_en_b;
@@ -21,13 +26,87 @@ int main(int argc, char* argv[])
                 
     bool frame_no[22] = {1,0,1,0,1,0,1,0,  1,0,1,0,1,0,1,0,  1,0,1,0,1,0};
     
+    
     bool plain_text[88] = {0,1,1,0,1,1,1,0, 0,1,1,0,0,0,0,1, 0,1,1,0,1,0,0,0, 0,1,1,0,1,0,0,1, 
                            0,1,1,1,0,1,0,0, 0,0,1,0,0,0,0,0, 0,1,1,1,0,0,0,0, 0,1,1,0,0,0,0,1, 
                            0,1,1,1,0,1,1,1, 0,1,1,0,0,0,0,1 ,0,1,1,1,0,0,1,0 };
+                           
     bool cipher_text[88] = {false};
+    
+    /*
+     * 
+     * Read plain text from binary file - argv[1]
+     * 
+     */
+    if(argc != 2)
+    {
+        cout<<"Error: Input file not found"<<endl;
+        exit(1);
+    }
+    ifstream file(argv[1]);
+    if(!file.is_open())
+    {
+        cout << endl << "-----------------------------------------------------------------------" << endl;
+        cout << "Error: Unable to open file" << argv[1] << endl;
+        cout << endl << "-----------------------------------------------------------------------" << endl;
+        exit(1);
+    }
+    
+    while(!file.eof())
+    {
+        file.get(file_char);
+        if(file_char == '\n') continue;
+        else if(file_char == '\r') continue;
+        else if(file_char == ' ') continue;
+        ++plain_text_bits_length;
+    }
+    file.close();
+    cout << endl << "Number of bits in plaintext file : " << plain_text_bits_length << endl;
+    plain_text_bits = new bool [plain_text_bits_length];
+    cipher_text_bits = new bool [plain_text_bits_length];
+    
+    file.open(argv[1]);
+    if(!file.is_open())
+    {
+        cout << endl << "-----------------------------------------------------------------------" << endl;
+        cout << "Error: Unable to open file" << argv[1] << endl;
+        cout << endl << "-----------------------------------------------------------------------" << endl;
+        exit(1);
+    }
+    
+    unsigned int i_plain_text=0;
+    while(!file.eof())
+    {
+        file.get(file_char);
+        if(file_char == '\n') continue;
+        else if(file_char == '\r') continue;
+        else if(file_char == ' ') continue;
+        else if(file_char == '0')
+        {
+            plain_text_bits[i_plain_text] = 0;
+            ++i_plain_text;
+            continue;
+        }
+        else if(file_char == '1')
+        {
+            plain_text_bits[i_plain_text] = 1;
+            ++i_plain_text;
+            continue;
+        }
+    }
+    
+    cout << endl;
+    for(int i=0; i<plain_text_bits_length; ++i)
+    {
+        cout << plain_text_bits[i];
+    }
+    cout << endl;
+    
+    file.close();
 #endif    
       
-    
+
+// Debug code for testing purpose    
 #ifdef DEBUG
     // test variables
     bool key_test[4] = {1, 0, 1, 1};
@@ -56,8 +135,9 @@ int main(int argc, char* argv[])
         LFSR3[i] = 0;
     
     a5_init(key, frame_no, LFSR1, LFSR2, LFSR3);
+    
     // Encryption
-    for (int i=0; i<88; ++i)
+    for (int i=0; i<plain_text_bits_length; ++i)
     {
         conditional_clock_signal(LFSR1[CLK_BIT_1], LFSR2[CLK_BIT_2], LFSR3[CLK_BIT_3], clk_en_a, clk_en_b, clk_en_c);
         if (clk_en_a == 1)
@@ -67,12 +147,16 @@ int main(int argc, char* argv[])
         if (clk_en_c == 1)
             shift_right(LFSR3, LFSR3_WIDTH, 3);
         k_i = XOR( XOR(LFSR1[LFSR1_WIDTH-1],LFSR2[LFSR2_WIDTH-1]) , LFSR3[LFSR3_WIDTH-1]);
-        cipher_text[i] = XOR(k_i, plain_text[i]);
+        cipher_text_bits[i] = XOR(k_i, plain_text_bits[i]);
     }
-    for(int i=0; i<88; ++i)
-        cout << cipher_text[i];
+    /*
     cout << endl;
+    for(int i=0; i<plain_text_bits_length; ++i)
+        cout << cipher_text_bits[i];
+    cout << endl;
+    */
     
+    // Initialize LFSR to zeros
     for(int i=0; i<LFSR1_WIDTH; ++i)
         LFSR1[i] = 0;
     for(int i=0; i<LFSR2_WIDTH; ++i)
@@ -80,9 +164,11 @@ int main(int argc, char* argv[])
     for(int i=0; i<LFSR3_WIDTH; ++i)
         LFSR3[i] = 0;
     
+    // Initialize LFSR w.r.t to key and frame number
     a5_init(key, frame_no, LFSR1, LFSR2, LFSR3);
-    // Encryption
-    for (int i=0; i<88; ++i)
+    
+    // Decryption
+    for (int i=0; i<plain_text_bits_length; ++i)
     {
         conditional_clock_signal(LFSR1[CLK_BIT_1], LFSR2[CLK_BIT_2], LFSR3[CLK_BIT_3], clk_en_a, clk_en_b, clk_en_c);
         if (clk_en_a == 1)
@@ -92,12 +178,17 @@ int main(int argc, char* argv[])
         if (clk_en_c == 1)
             shift_right(LFSR3, LFSR3_WIDTH, 3);
         k_i = XOR( XOR(LFSR1[LFSR1_WIDTH-1],LFSR2[LFSR2_WIDTH-1]) , LFSR3[LFSR3_WIDTH-1]);
-        cipher_text[i] = XOR(k_i, cipher_text[i]);
+        cipher_text_bits[i] = XOR(k_i, cipher_text_bits[i]);
     }
     cout << endl << endl;
-    for(int i=0; i<88; ++i)
-        cout << cipher_text[i];
+    
+    for(int i=0; i<plain_text_bits_length; ++i)
+        cout << cipher_text_bits[i];
     cout << endl;
+    
+    
+    delete plain_text_bits;
+    delete cipher_text_bits;
 #endif
 
 
@@ -114,15 +205,6 @@ int main(int argc, char* argv[])
     cout << "clk_en_a - " << clk_en_a << endl << "clk_en_b - " << clk_en_b << endl << "clk_en_c - " << clk_en_c << endl;
     cout << "Done..." << endl << endl;
 #endif
-    
-    //for (int i=0; i<22; ++i)
-    //    LFSR2[i] = true;
-    /*    
-    for (int i=0; i<19; ++i)
-    {
-        cout << XOR(LFSR1[i], LFSR2[i]);
-        cout << endl;
-    }
-    */
+ 
     return 0;
 }
