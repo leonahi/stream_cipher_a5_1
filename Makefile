@@ -3,8 +3,6 @@
 #
 # Coder - Nahit Pawar
 #         PhD Indian Institute of Technology Bombay, India
-# Starting Date  - 10/01/13
-# Last Modified  - 04/08/13
 #
 #----------------------------------------------------------------------------
 
